@@ -1,10 +1,11 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .serializers import Userserializer
+from .serializers import ProductSerializer, Userserializer
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
+from .models import Product
 
 @api_view(['POST'])
 def login(request):
@@ -24,4 +25,10 @@ def signup(request):
         user.save()
         return Response({"user":serializer.data})
     return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+def productview(request):
+    products = Product.objects.all()
+    serializer = ProductSerializer(products, many=True)
+    return Response({"products": serializer.data})
 
