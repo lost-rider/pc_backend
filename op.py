@@ -12,7 +12,7 @@ from selenium.webdriver.common.by import By
 
 from server.services import ProductService
 from server.models import Product
-
+from apscheduler.schedulers.blocking import BlockingScheduler
 
 # Initialize Selenium WebDriver
 chromedriver_path = r'C:\Users\amish\Documents\btp_api\chromedriver-win64\chromedriver.exe'
@@ -37,7 +37,16 @@ for i in range(len(prices)):
     prices_list.append([price_text, title_text, link_href, image_url])
 
 # Store data in the Django database
-print(prices_list[0])
-Product.objects.all().delete()
-ProductService.create_products(prices_list)
-driver.quit()
+# print(prices_list[0])
+def func():
+    print(prices_list[0])
+    Product.objects.all().delete()
+    ProductService.create_products(prices_list)
+    
+
+scheduler = BlockingScheduler()
+scheduler.add_job(func, 'interval', seconds=20)  # Execute my_task every 5 seconds
+scheduler.start()
+
+# driver.quit()
+
