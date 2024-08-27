@@ -45,7 +45,7 @@ def func():
     
 
 scheduler = BlockingScheduler()
-scheduler.add_job(func, 'interval', seconds=20)  # Execute my_task every 5 seconds
+scheduler.add_job(func, 'interval', seconds=180)  # Execute my_task every 5 seconds
 scheduler.start()
 
 # driver.quit()
