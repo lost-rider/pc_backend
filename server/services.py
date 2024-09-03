@@ -14,12 +14,26 @@ class ProductService:
             value='NA'
             power='NA'
             current='NA'
+            value1=0
+            n1=price_text.split()
+            value2=float(n1[1])
             if len(words) > 0:
                 for i in words:
                     n = len(i)
-                    if n>=2 and (i[n-2:n] == 'uH' or i[n-2:n] == 'mH'):
-                        # value = float(i[0:n-2])
-                
+                    if n>=2 and  (i[n-2:n].lower()=='uh' or  i[n-2:n].lower()=='mh'):
+                        unit = i[n-2:n].lower()  # Convert to lowercase for consistency
+                        try:
+                            value1 = float(i[0:n-2])
+                            if unit == 'uh':
+                                value1 /= 1000000
+                            elif unit == 'mh':
+                                value1 /= 1000
+                            else:
+                                value1 = float(i[0:n-2])
+
+                            print(f"Value1 assigned: {value1}")  # Debugging print
+                        except ValueError:
+                            print("Error converting to float:", i[0:n-2])
                         value = i
                     if i[n-1] == 'W':
                         # fraction_str = i[0:n-1].strip()
@@ -37,6 +51,8 @@ class ProductService:
                 'current_rating': current,
                 'power_rating': power,
                 'value': value,
+                'value1':value1,
+                'value2':value2,
 
             }
             serializer = ProductSerializer(data=data)
@@ -52,6 +68,8 @@ class ProductService:
                 product.value=value
                 product.power_rating=power
                 product.current_rating=current
+                product.value1=value1
+                product.value2=value2
 
                 product.save()
                 print(f"Created product: {serializer.instance}")
