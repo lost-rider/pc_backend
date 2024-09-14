@@ -9,7 +9,7 @@ class ProductService:
         
 
         for item in prices_list:
-            price_text, title_text, link_href, image_url = item
+            price_text, title_text, link_href = item
             words = title_text.split()
             value='NA'
             power='NA'
@@ -47,12 +47,13 @@ class ProductService:
                 'title': title_text,
                 'price': price_text,
                 'link': link_href,
-                'image_url': image_url,
+                # 'image_url': image_url,
                 'current_rating': current,
                 'power_rating': power,
                 'value': value,
                 'value1':value1,
                 'value2':value2,
+                'core':'NA',
 
             }
             serializer = ProductSerializer(data=data)
@@ -64,12 +65,77 @@ class ProductService:
                 product.title = title_text
                 product.price = price_text
                 product.link = link_href
-                product.image_url = image_url
+                # product.image_url = image_url
                 product.value=value
                 product.power_rating=power
                 product.current_rating=current
                 product.value1=value1
                 product.value2=value2
+                product.core='NA'
+
+                product.save()
+                print(f"Created product: {serializer.instance}")
+            else:
+                print(f"Error creating product: {serializer.errors}")
+            # products.append(product)
+        all_objects = Product.objects.all()
+        print(all_objects)
+        return
+
+
+    def create_products2(prices_list):
+        # products = []
+        
+
+        for item in prices_list:
+            title, price, value, current,core,link_href = item
+            # words = title_text.split()
+            
+            power='NA'
+            n1=len(value)
+            unit = value[n1-2:n1].lower()  # Convert to lowercase for consistency
+            
+            value1 = float(value[0:n1-3])
+            if unit == 'uh':
+                value1 /= 1000000
+            elif unit == 'mh':
+                value1 /= 1000
+
+            n1=price.split()
+            plen=len(n1[2])
+            value2=float(n1[2][1:plen])
+            
+            
+                
+            data = {
+                'title': title,
+                'price': price,
+                'link': link_href,
+                # 'image_url': image_url,
+                'current_rating': current,
+                'power_rating': power,
+                'value': value,
+                'value1':value1,
+                'value2':value2,
+                'core':core,
+
+            }
+            serializer = ProductSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save()
+                product = serializer.save()  # This returns the created or updated product instance
+
+        # Make additional updates to the product
+                product.title = title
+                product.price = price
+                product.link = link_href
+                # product.image_url = image_url
+                product.value=value
+                product.power_rating=power
+                product.current_rating=current
+                product.value1=value1
+                product.value2=value2
+                product.core=core
 
                 product.save()
                 print(f"Created product: {serializer.instance}")
