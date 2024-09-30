@@ -88,7 +88,7 @@ def digikey(driver):
     core_ex=driver.find_elements(By.ID, '1221')
     link_href_ex= driver.find_elements(By.XPATH, '//a[@class="tss-css-41s5xv-productColExpandedPartNumber-anchor"]')
     price_ex=driver.find_elements(By.ID, '-101')
-    for i in range(len(price_ex)):
+    for i in range(len(title_ex)):
         title=title_ex[i].text
         price=price_ex[i].text
         inductor_value=inductor_value_ex[i].text
@@ -97,48 +97,93 @@ def digikey(driver):
         link_href = link_href_ex[i].get_attribute("href")
 
         prices_list2.append([title, price, inductor_value, curr_rating,core,link_href])
-    # links = driver.find_elements(By.XPATH, '//a[@class="woocommerce-LoopProduct-link woocommerce-loop-product__link"]')
 
-        
-        
-    # Store data in the Django database
-    # print(prices_list2[0])
     return prices_list2
 
+##from mouser.in
+def mouser(driver):
+    prices_list3=[]
+    driver.get('https://www.mouser.in/c/passive-components/inductors-chokes-coils/power-inductors-smd/?q=inductors&core%20material=Ferrite&inductance=10%20nH~~120%20mH&rp=passive-components%2Finductors-chokes-coils%2Fpower-inductors-smd%7C~Inductance%7C~Core%20Material')
+    title_ex = driver.find_elements(By.XPATH, '//td[@class="column desc-column hide-xsmall"]')
+    ##tss-css-7dp38y-productColExpandedDescription
+    inductor_value_ex = driver.find_elements(By.ID, "2087")
+    curr_rating_ex = driver.find_elements(By.ID, '2088')
+    # core_ex=driver.find_elements(By.ID, '1221')
+    link_href_ex= driver.find_elements(By.ID, 'lnkMfrPartNumber_1')
+    price_ex=driver.find_elements(By.ID, '-101')
+    for i in range(len(price_ex)):
+        title=title_ex[i].text
+        price=price_ex[i].text
+        inductor_value=inductor_value_ex[i].text
+        curr_rating=curr_rating_ex[i].text
+        core="ferrite"
+        link_href = link_href_ex[i].get_attribute("href")
 
+        prices_list3.append([title, price, inductor_value, curr_rating,core,link_href])
 
-##from element-14
+    return prices_list3
 
+#from element-14
+def element14(driver):
+    prices_list3 = []
+    driver.get('https://in.element14.com/c/passive-components/inductors/fixed-value-inductors')
 
-# driver.get('https://in.element14.com/c/passive-components/inductors/fixed-value-inductors')
-# prices1 = driver.find_elements(By.XPATH, '//span[@class="PriceBreakupTableCellstyles__TaxAmount-sc-ylr3xn-2 yKzyS"]')
-# images1 = driver.find_elements(By.XPATH, '//img[@class="ProductImagestyles__Image-sc-1mj07db-1 bFOYXT product_image__plpMobile"]')
-# titles1 = driver.find_elements(By.XPATH, '//div[@class="ProductListerPageMobileElementstyles__Description-sc-gbb7ol-14 jnppqh"]')
-# # links = driver.find_elements(By.XPATH, '//a[@class="woocommerce-LoopProduct-link woocommerce-loop-product__link"]')
+    # Locate all product containers (adjust the div class if necessary)
+    product_containers = driver.find_elements(By.XPATH, '//div[@class="ProductListerPageMobileElementstyles__ListerTableMobileElement-sc-gbb7ol-0 juoHcf"]')
 
+    for product in product_containers:
+        # Extract the title
+        title = product.find_element(By.XPATH, './/div[@class="ProductListerPageMobileElementstyles__Description-sc-gbb7ol-14 jnppqh"]').text.strip()
 
-# for i in range(len(titles1)):
-#     price_text = prices1[i].text.strip()
-#     image_url = ''
-#     title_text = titles1[i].text.strip()
-#     link_href = 'https://in.element14.com/c/passive-components/inductors/fixed-value-inductors'
+        # Extract the first price
+        try:
+            # Find all price elements, then extract the first one
+            prices = product.find_elements(By.XPATH, './/span[@class="PriceBreakupTableCellstyles__TaxAmount-sc-ylr3xn-2 yKzyS"]')
+            price = prices[0].text.strip() if prices else "N/A"
+        except:
+            price = "N/A"
+
+        # Extract the inductor value
+        try:
+            inductor_value = product.find_element(By.CSS_SELECTOR, '[data-testid="catalog.listerTable.extended-attrs-dropdown__Inductance"]').text.strip()
+        except:
+            inductor_value = "N/A"
+
+        # Extract the current rating
+        try:
+            curr_rating = product.find_element(By.CSS_SELECTOR, '[data-testid="catalog.listerTable.extended-attrs-dropdown__DC Current Rating"]').text.strip()
+        except:
+            curr_rating = "N/A"
+
+        # Other details
+        core = "NA"
+        link_href = 'https://in.element14.com/c/passive-components/inductors/fixed-value-inductors'
+
+        # Append to the list
+        prices_list3.append([title, price, inductor_value, curr_rating, core, link_href])
     
-#     prices_list.append([price_text, title_text, link_href, image_url])
-# Store data in the Django database
-# print(prices_list[0])
+    return prices_list3
+
+
 def func():
-    prices_list = scrape_all_pages(driver, url)
-    print(prices_list[0])
+    prices_list3=element14(driver)
+    print(prices_list3)
+    # Product.objects.all().delete()
+    # prices_list = scrape_all_pages(driver, url)
+    # print(prices_list[0])
+    
+    # prices_list2=digikey(driver)
+    # print(prices_list2[0])
+    
+    # ProductService.create_products(prices_list)
+    # ProductService.create_products2(prices_list2)
+
     # delay = random.uniform(60, 180)  # Random delay between 60 to 120 seconds
     # time.sleep(delay)
-    Product.objects.all().delete()
-    ##add this line laterrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
-    prices_list2=digikey(driver)
-    print(prices_list2[0])
-    ProductService.create_products(prices_list)
-    ProductService.create_products2(prices_list2)
     
-
+    ##add this line laterrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
+    
+func()
 scheduler = BlockingScheduler()
 scheduler.add_job(func, 'interval', seconds=120)  # Execute my_task every 1 hr
 scheduler.start()
