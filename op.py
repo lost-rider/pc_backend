@@ -2,7 +2,8 @@ import os
 import django
 import random
 import time
-
+import re
+import requests
 
 
 # Set up Django environment
@@ -19,10 +20,15 @@ from server.models import Product
 from apscheduler.schedulers.blocking import BlockingScheduler
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
 
+# driver = webdriver.Chrome(ChromeDriverManager().install())
 
 # Initialize Selenium WebDriver
 chromedriver_path = r'C:\Users\amish\Documents\btp_api\chromedriver-win64\chromedriver.exe'
+
+# chromedriver_path = 'C:\\Users\\amish\\Documents\\btp_api\\chromedriver-win64\\chromedriver.exe'
 service = Service(chromedriver_path)
 driver = webdriver.Chrome(service=service)
 
@@ -101,27 +107,41 @@ def digikey(driver):
     return prices_list2
 
 ##from mouser.in
-def mouser(driver):
-    prices_list3=[]
-    driver.get('https://www.mouser.in/c/passive-components/inductors-chokes-coils/power-inductors-smd/?q=inductors&core%20material=Ferrite&inductance=10%20nH~~120%20mH&rp=passive-components%2Finductors-chokes-coils%2Fpower-inductors-smd%7C~Inductance%7C~Core%20Material')
-    title_ex = driver.find_elements(By.XPATH, '//td[@class="column desc-column hide-xsmall"]')
-    ##tss-css-7dp38y-productColExpandedDescription
-    inductor_value_ex = driver.find_elements(By.ID, "2087")
-    curr_rating_ex = driver.find_elements(By.ID, '2088')
-    # core_ex=driver.find_elements(By.ID, '1221')
-    link_href_ex= driver.find_elements(By.ID, 'lnkMfrPartNumber_1')
-    price_ex=driver.find_elements(By.ID, '-101')
-    for i in range(len(price_ex)):
-        title=title_ex[i].text
-        price=price_ex[i].text
-        inductor_value=inductor_value_ex[i].text
-        curr_rating=curr_rating_ex[i].text
-        core="ferrite"
-        link_href = link_href_ex[i].get_attribute("href")
+def mouser():
+   
+    import requests
 
-        prices_list3.append([title, price, inductor_value, curr_rating,core,link_href])
+    url = "https://api.mouser.com/api/v1/search/keyword"
+    headers = {
+        "Content-Type": "application/json",
+        "apiKey": "f5058d4b-a63d-4314-ac9f-09e0418624fc"  
+    }
 
-    return prices_list3
+    payload = {
+        "SearchByKeywordRequest": {
+            "keyword": "inductor",
+            "records": 50,
+            "startingRecord": 0,
+            "searchOptions": "",
+            "searchWithYourSignUpLanguage": "en"
+        }
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+
+    if response.status_code == 200:
+        data = response.json()
+        parts = data.get("SearchResults", {}).get("Parts", [])
+        for part in parts:
+            print(f"Manufacturer: {part['Manufacturer']}")
+            print(f"Part Number: {part['ManufacturerPartNumber']}")
+            print(f"Description: {part['Description']}")
+            print(f"Availability: {part['Availability']}")
+            print(f"DataSheetUrl: {part['DataSheetUrl']}")
+            print("-" * 20)
+    else:
+        print(f"Failed to retrieve data. Status code: {response.status_code}")
+
 
 #from element-14
 def element14(driver):
@@ -144,20 +164,37 @@ def element14(driver):
             price = "N/A"
 
         # Extract the inductor value
+        
         try:
-            inductor_value = product.find_element(By.CSS_SELECTOR, '[data-testid="catalog.listerTable.extended-attrs-dropdown__Inductance"]').text.strip()
+            inductor_value1 = product.find_element(By.CSS_SELECTOR, '[data-testid="catalog.listerTable.extended-attrs-dropdown__Inductance"]').text.split('\n')
+            inductor_value=inductor_value1[1]
         except:
             inductor_value = "N/A"
 
         # Extract the current rating
         try:
-            curr_rating = product.find_element(By.CSS_SELECTOR, '[data-testid="catalog.listerTable.extended-attrs-dropdown__DC Current Rating"]').text.strip()
+            curr_rating1 = product.find_element(By.CSS_SELECTOR, '[data-testid="catalog.listerTable.extended-attrs-dropdown__DC Current Rating"]').text.split('\n')
+            curr_rating=curr_rating1[1]
         except:
             curr_rating = "N/A"
 
+        try:
+            # link_element = product.find_element(By.CSS_SELECTOR, '[data-testid="catalog.listerTable.product-link"]')
+            link_element = product.find_element(By.CLASS_NAME, "ProductListerPageMobileElementstyles__ManNumberLink-sc-gbb7ol-8.cFxLGD")
+    
+    # Get the href attribute to retrieve the link
+            relative_link = link_element.get_attribute('href')
+            print(relative_link)
+            link = relative_link
+            #https://in.element14.com"+
+        except Exception as e:
+            print(f"Error occurred: {e}")
+            link = "N/A"
+
         # Other details
         core = "NA"
-        link_href = 'https://in.element14.com/c/passive-components/inductors/fixed-value-inductors'
+        # catalog.listerTable.product-link
+        link_href = link
 
         # Append to the list
         prices_list3.append([title, price, inductor_value, curr_rating, core, link_href])
@@ -166,17 +203,26 @@ def element14(driver):
 
 
 def func():
+    Product.objects.all().delete()
+    # mouser()
+    # prices_list4=[]
+    # prices_list4.append(['Power Inductors - SMD 47UH 1.7A 177 MOHM SMD', '₹36.70', ['47UH'], ['1.7A'], 'ferrite', 'https://www.mouser.in/ProductDetail/Vishay-Dale/IFSC3232DBER470M02?qs=iLKYxzqNS743NLwMxrLEwQ%3D%3D'])
+    # print(prices_list4[0])
+    # ProductService.create_products4(prices_list4)
     prices_list3=element14(driver)
     print(prices_list3)
-    # Product.objects.all().delete()
-    # prices_list = scrape_all_pages(driver, url)
-    # print(prices_list[0])
     
-    # prices_list2=digikey(driver)
-    # print(prices_list2[0])
+    ProductService.create_products3(prices_list3)
     
-    # ProductService.create_products(prices_list)
-    # ProductService.create_products2(prices_list2)
+    prices_list = scrape_all_pages(driver, url)
+    print(prices_list[0])
+    
+    prices_list2=digikey(driver)
+    print(prices_list2[0])
+    
+    ProductService.create_products(prices_list)
+    ProductService.create_products2(prices_list2)
+    
 
     # delay = random.uniform(60, 180)  # Random delay between 60 to 120 seconds
     # time.sleep(delay)
@@ -185,7 +231,7 @@ def func():
     
 func()
 scheduler = BlockingScheduler()
-scheduler.add_job(func, 'interval', seconds=120)  # Execute my_task every 1 hr
+scheduler.add_job(func, 'interval', seconds=3600)  # Execute my_task every 1 hr
 scheduler.start()
 
 # driver.quit()

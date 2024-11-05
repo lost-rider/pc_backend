@@ -96,10 +96,13 @@ class ProductService:
             unit = value[n1-2:n1].lower()  # Convert to lowercase for consistency
             
             value1 = float(value[0:n1-3])
-            if unit == 'uh':
+            if unit == 'uh'or unit=='µh':
                 value1 /= 1000000
             elif unit == 'mh':
                 value1 /= 1000
+            
+            elif unit == 'nh':
+                value1 /= 1000000000
 
             n1=price.split()
             plen=len(n1[2])
@@ -151,22 +154,31 @@ class ProductService:
         
 
         for item in prices_list:
+            
             title, price, value, current,core,link_href = item
             # words = title_text.split()
             
             power='NA'
-            n1=len(value)
-            unit = value[n1-2:n1].lower()  # Convert to lowercase for consistency
-            
-            value1 = float(value[0:n1-3])
-            if unit == 'uh':
-                value1 /= 1000000
-            elif unit == 'mh':
-                value1 /= 1000
+            if value!='N/A':
+                n1=len(value)
+                unit = value[n1-2:n1].lower()  # Convert to lowercase for consistency
+                midval=value[0:n1-2].split()
+                if len(midval)==0:
+                    txt=value[0:n1-3]
+                else:
+                    txt=midval[0]
+                value1 = float(txt)
+                if unit == 'uh' or unit=='µh':
+                    value1 /= 1000000
+                elif unit == 'mh' :
+                    value1 /= 1000
+                elif unit == 'nh' :
+                    value1 /= 1000000000
+            else:
+                value1=-1
+            n1=price.split('.')
+            value2 = float(n1[1].replace(',', ''))
 
-            n1=price.split()
-            plen=len(n1[2])
-            value2=float(n1[2][1:plen])
             
             
                 
@@ -208,4 +220,69 @@ class ProductService:
         all_objects = Product.objects.all()
         print(all_objects)
         return 
+
+
+    def create_products4(prices_list):
+            # products = []
+            
+
+            for item in prices_list:
+                
+                title, price, value, current,core,link_href = item
+                # words = title_text.split()
+                
+                power='NA'
+                if value!='N/A':
+                    values=value[0].split()
+                    n1=len(values)
+                    value1=float(values[0][0:n1-3])
+                    
+                else:
+                    value1=-1
+                n1=price.split('₹')
+                # print(n1)
+                value2 = float(n1[1])
+
+                
+                
+                    
+                data = {
+                    'title': title,
+                    'price': price,
+                    'link': link_href,
+                    # 'image_url': image_url,
+                    'current_rating': current[0],
+                    'power_rating': 'N/A',
+                    'value': value[0],
+                    'value1':value1,
+                    'value2':value2,
+                    'core':core,
+
+                }
+                serializer = ProductSerializer(data=data)
+                if serializer.is_valid():
+                    serializer.save()
+                    product = serializer.save()  # This returns the created or updated product instance
+
+            # Make additional updates to the product
+                    # product.title = title
+                    # product.price = price
+                    # product.link = link_href
+                    # # product.image_url = image_url
+                    # product.value=value[0]
+                    # product.power_rating=power
+                    # product.current_rating=current[0]
+                    # product.value1=value1
+                    # product.value2=value2
+                    # product.core=core
+
+                    product.save()
+                    print(f"Created product: {serializer.instance}")
+                else:
+                    print(f"Error creating product: {serializer.errors}")
+                # products.append(product)
+            all_objects = Product.objects.all()
+            print(all_objects)
+            return 
+
 
